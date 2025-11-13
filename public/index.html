@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kurs hiszpańskiego AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Kurs hiszpańskiego AI – poziom A1</h1>
+
+  <button id="btn-lekcja">Pobierz nową lekcję</button>
+  <div id="status"></div>
+
+  <div id="lekcja-container" class="hidden">
+    <h2 id="temat-lekcji"></h2>
+    <p id="info-poziom"></p>
+
+    <div id="flashcard">
+      <div id="slowko-es"></div>
+      <div id="slowko-pl"></div>
+
+      <div id="flashcard-buttons">
+        <button id="btn-audio">🔊 Odtwórz</button>
+      </div>
+    </div>
+
+    <div id="kontrola-slowek">
+      <button id="btn-znalem">Znałem</button>
+      <button id="btn-nie-znalem">Nie znałem</button>
+    </div>
+
+    <p id="postep"></p>
+
+    <hr>
+
+    <h3>Przykładowe zdania</h3>
+    <div id="zdania"></div>
+
+    <hr>
+
+    <h3>Ćwiczenie</h3>
+    <div id="cwiczenie"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
