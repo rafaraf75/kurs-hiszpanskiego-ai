@@ -16,6 +16,12 @@ const postepEl = document.getElementById('postep');
 const zdaniaEl = document.getElementById('zdania');
 const cwiczenieEl = document.getElementById('cwiczenie');
 
+// 🔹 nowe: sekcje, które chcemy chować/pokazywać
+const sekcjaSlowka = document.getElementById('sekcja-slowka');
+const sekcjaZdania = document.getElementById('sekcja-zdania');
+const sekcjaCwiczenie = document.getElementById('sekcja-cwiczenie');
+const sekcjaQuiz = document.getElementById('sekcja-quiz'); // może być null – spoko
+
 let lekcja = null;
 let indexSlowka = 0;
 let licznikZnalem = 0;
@@ -30,6 +36,14 @@ function speakEs(text) {
   }
 }
 
+// 🔹 pomocnicza funkcja – ustaw widoczność sekcji
+function resetEtapow() {
+  if (sekcjaSlowka) sekcjaSlowka.classList.remove('hidden'); // słówka widać od razu
+  if (sekcjaZdania) sekcjaZdania.classList.add('hidden');
+  if (sekcjaCwiczenie) sekcjaCwiczenie.classList.add('hidden');
+  if (sekcjaQuiz) sekcjaQuiz.classList.add('hidden');
+}
+
 function pokazSlowko() {
   if (!lekcja || !lekcja.slowka || lekcja.slowka.length === 0) return;
 
@@ -41,12 +55,24 @@ function pokazSlowko() {
 }
 
 function nastepneSlowko(znalem) {
+  if (!lekcja || !lekcja.slowka) return;
+
+  // jeśli już skończyliśmy słówka – nic nie rób
+  if (indexSlowka >= lekcja.slowka.length) {
+    return;
+  }
+
   if (znalem) licznikZnalem++;
 
   indexSlowka++;
 
   if (indexSlowka >= lekcja.slowka.length) {
     postepEl.textContent = `Koniec słówek! Znałeś ${licznikZnalem} z ${lekcja.slowka.length}.`;
+
+    // 🔹 tu przechodzimy do “etapu 2” – odsłaniamy zdania i ćwiczenia
+    if (sekcjaZdania) sekcjaZdania.classList.remove('hidden');
+    if (sekcjaCwiczenie) sekcjaCwiczenie.classList.remove('hidden');
+
     return;
   }
 
@@ -55,7 +81,7 @@ function nastepneSlowko(znalem) {
 
 function pokazZdania() {
   zdaniaEl.innerHTML = '';
-  if (!lekcja.zdania) return;
+  if (!lekcja || !lekcja.zdania) return;
 
   lekcja.zdania.forEach((z) => {
     const p = document.createElement('p');
@@ -66,7 +92,7 @@ function pokazZdania() {
 
 function pokazCwiczenie() {
   cwiczenieEl.innerHTML = '';
-  if (!lekcja.cwiczenie) return;
+  if (!lekcja || !lekcja.cwiczenie) return;
 
   const c = lekcja.cwiczenie;
 
@@ -94,6 +120,9 @@ function pokazCwiczenie() {
       p.textContent = `${i + 1}. ${o}`;
       odpDiv.appendChild(p);
     });
+
+    // 🔹 tu możemy w przyszłości włączyć quiz
+    if (sekcjaQuiz) sekcjaQuiz.classList.remove('hidden');
   });
 
   cwiczenieEl.appendChild(btnOdp);
@@ -119,6 +148,9 @@ btnLekcja.addEventListener('click', async () => {
 
     indexSlowka = 0;
     licznikZnalem = 0;
+
+    // 🔹 start od etapu: tylko słówka
+    resetEtapow();
 
     tematEl.textContent = lekcja.temat || 'Lekcja hiszpańskiego';
     poziomEl.textContent = `Poziom: ${lekcja.poziom || 'A1'}`;
