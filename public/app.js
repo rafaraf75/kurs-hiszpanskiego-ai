@@ -16,7 +16,7 @@ const postepEl = document.getElementById('postep');
 const zdaniaEl = document.getElementById('zdania');
 const cwiczenieEl = document.getElementById('cwiczenie');
 
-// 🔹 nowe: sekcje, które chcemy chować/pokazywać
+// 🔹 sekcje, które chcemy chować/pokazywać
 const sekcjaSlowka = document.getElementById('sekcja-slowka');
 const sekcjaZdania = document.getElementById('sekcja-zdania');
 const sekcjaCwiczenie = document.getElementById('sekcja-cwiczenie');
@@ -25,6 +25,45 @@ const sekcjaQuiz = document.getElementById('sekcja-quiz'); // może być null �
 let lekcja = null;
 let indexSlowka = 0;
 let licznikZnalem = 0;
+
+// 🔹 LocalStorage – klucz i helpery
+const STORAGE_KEY = 'kurs_hiszpanski_a1_progress_v1';
+
+function zapiszPostep() {
+  if (!lekcja) return;
+
+  const dane = {
+    lekcja,
+    indexSlowka,
+    licznikZnalem,
+    timestamp: Date.now(),
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dane));
+  } catch (e) {
+    console.warn('Nie udało się zapisać postępu w localStorage', e);
+  }
+}
+
+function wczytajPostep() {
+  try {
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch (e) {
+    console.warn('Nie udało się wczytać postępu z localStorage', e);
+    return null;
+  }
+}
+
+function wyczyscPostep() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn('Nie udało się usunąć postępu z localStorage', e);
+  }
+}
 
 function speakEs(text) {
   try {
@@ -65,6 +104,9 @@ function nastepneSlowko(znalem) {
   if (znalem) licznikZnalem++;
 
   indexSlowka++;
+
+  // 🔹 zapisujemy postęp po zmianie indeksu / licznika
+  zapiszPostep();
 
   if (indexSlowka >= lekcja.slowka.length) {
     postepEl.textContent = `Koniec słówek! Znałeś ${licznikZnalem} z ${lekcja.slowka.length}.`;
@@ -129,6 +171,56 @@ function pokazCwiczenie() {
   cwiczenieEl.appendChild(odpDiv);
 }
 
+// 🔹 reset lekcji i postępu
+function resetLekcja() {
+  wyczyscPostep();
+
+  lekcja = null;
+  indexSlowka = 0;
+  licznikZnalem = 0;
+
+  slowkoEsEl.textContent = '';
+  slowkoPlEl.textContent = '';
+  postepEl.textContent = '';
+  zdaniaEl.innerHTML = '';
+  cwiczenieEl.innerHTML = '';
+
+  resetEtapow();
+  container.classList.add('hidden');
+
+  statusEl.textContent = 'Postęp wyczyszczony. Kliknij "Nowa lekcja", żeby zacząć od początku.';
+}
+
+// 🔹 przywracanie lekcji po odświeżeniu / powrocie na stronę
+document.addEventListener('DOMContentLoaded', () => {
+  const zapisane = wczytajPostep();
+  if (zapisane) {
+    lekcja = zapisane.lekcja;
+    indexSlowka = zapisane.indexSlowka || 0;
+    licznikZnalem = zapisane.licznikZnalem || 0;
+
+    // ustawiamy UI tak jak po pobraniu lekcji
+    resetEtapow();
+
+    tematEl.textContent = lekcja.temat || 'Lekcja hiszpańskiego';
+    poziomEl.textContent = `Poziom: ${lekcja.poziom || 'A1'}`;
+
+    pokazSlowko();
+    pokazZdania();
+    pokazCwiczenie();
+
+    container.classList.remove('hidden');
+    statusEl.textContent = 'Przywrócono ostatnią lekcję z pamięci ✅';
+  } else {
+    statusEl.textContent = 'Kliknij "Nowa lekcja", aby zacząć.';
+  }
+
+  const btnReset = document.getElementById('reset-lesson-btn');
+  if (btnReset) {
+    btnReset.addEventListener('click', resetLekcja);
+  }
+});
+
 btnLekcja.addEventListener('click', async () => {
   statusEl.textContent = 'Ładuję lekcję...';
   container.classList.add('hidden');
@@ -161,6 +253,9 @@ btnLekcja.addEventListener('click', async () => {
 
     container.classList.remove('hidden');
     statusEl.textContent = 'Lekcja załadowana ✅';
+
+    // 🔹 zapisujemy świeżo pobraną lekcję
+    zapiszPostep();
   } catch (err) {
     console.error(err);
     statusEl.textContent = 'Błąd połączenia z serwerem ❌';
