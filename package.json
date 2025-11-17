@@ -4,7 +4,10 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev:server": "node server.js",
+    "dev:frontend": "cd frontend-react && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:frontend\""
   },
   "keywords": [],
   "author": "",
@@ -15,5 +18,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
