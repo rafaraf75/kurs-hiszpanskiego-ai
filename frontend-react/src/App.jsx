@@ -99,7 +99,11 @@ function App() {
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
         <button onClick={loadLesson} disabled={loading}>
-          {loading ? "Ładowanie..." : hasLesson ? "Pobierz nową lekcję" : "Pobierz lekcję"}
+          {loading
+            ? "Ładowanie..."
+            : hasLesson
+            ? "Pobierz inną lekcję"
+            : "Pobierz pierwszą lekcję"}
         </button>
 
         <button
@@ -121,6 +125,7 @@ function App() {
           lesson={lesson}
           progress={progress}
           onProgressChange={handleProgressChange}
+          onNewLesson={loadLesson}
         />
       ) : (
         <p style={{ marginTop: "10px" }}>
