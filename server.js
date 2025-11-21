@@ -12,48 +12,68 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// strona główna
+// Strona główna (nieużywane po migracji na React, ale zostawiamy)
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
 
-// 🔥 ROUTE: generowanie lekcji jako JSON
+// 🔥 ROUTE: generowanie lekcji jako JSON — TERAZ Z RÓŻNYMI TEMATAMI A1
 app.get('/lekcja', async (req, res) => {
   try {
-    const prompt = `
-Jesteś nauczycielem hiszpańskiego (poziom A1).
-Przygotuj lekcję w formacie JSON **bez żadnego tekstu wokoło**.
 
-Zwróć TYLKO JSON zgodny z tym schematem:
+    // 🔹 Lista tematów poziomu A1 (możesz rozbudować)
+    const TEMATY_A1 = [
+      "Powitania i pożegnania",
+      "Przedstawianie się i informacje o sobie",
+      "Rodzina i bliscy",
+      "W klasie / przedmioty szkolne",
+      "Liczby i podawanie wieku",
+      "Kolory i przymiotniki",
+      "Jedzenie i napoje",
+      "Zakupy i ubrania",
+      "Miejsca w mieście",
+      "Plan dnia i czynności codzienne",
+      "Pogoda",
+      "Hobby i zainteresowania"
+    ];
+
+    // 🔹 wybieramy losowy temat
+    const tematLosowy = TEMATY_A1[Math.floor(Math.random() * TEMATY_A1.length)];
+
+    // 🔥 dynamiczny prompt dla AI
+    const prompt = `
+Jesteś nauczycielem języka hiszpańskiego.
+Przygotuj kompletną lekcję na poziomie A1.
+
+Temat lekcji: "${tematLosowy}"
+
+Zwróć TYLKO poprawny obiekt JSON (bez markdown, bez komentarzy, bez tekstu przed i po).
+
+Struktura JSON musi być taka:
 
 {
-  "temat": "Powitania",
+  "temat": "...",
   "poziom": "A1",
   "slowka": [
-    { "es": "hola", "pl": "cześć" }
+    { "es": "...", "pl": "..." }
   ],
   "zdania": [
-    { "es": "Hola, ¿cómo estás?", "pl": "Cześć, jak się masz?" }
+    { "es": "...", "pl": "..." }
   ],
   "cwiczenie": {
-    "typ": "tlumaczenie_pl_na_es",
-    "pytania": [
-      "Cześć, jak się masz?",
-      "Dziękuję za pomoc."
-    ],
-    "odpowiedzi": [
-      "Hola, ¿cómo estás?",
-      "Gracias por tu ayuda."
-    ]
+    "pytania": ["..."],
+    "odpowiedzi": ["..."]
   }
 }
 
-Ważne:
-- Odpowiadasz TYLKO jednym obiektem JSON (bez komentarzy, bez markdown).
+Wymagania:
+- Używaj prostych słów i krótkich zdań odpowiednich dla poziomu A1.
+- Słówka, zdania i ćwiczenie muszą pasować tematycznie do: "${tematLosowy}".
 - Używaj podwójnych cudzysłowów jak w poprawnym JSON.
-- Dla poziomu A1 dobierz bardzo proste słówka i zdania.
+- Nie dodawaj żadnych wyjaśnień poza JSON.
 `;
 
+    // 🔥 zapytanie do OpenRouter
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,35 +83,36 @@ Ważne:
       body: JSON.stringify({
         model: 'openai/gpt-oss-20b',
         messages: [
-          { role: 'system', content: 'Jesteś pomocnym asystentem do nauki hiszpańskiego.' },
+          { role: 'system', content: 'Jesteś pomocnym nauczycielem hiszpańskiego.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.4
+        temperature: 0.9   // większa różnorodność
       })
     });
 
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content;
 
-    // próbujemy sparsować JSON zwrócony przez model
+    // 🔥 próba parsowania JSON z modelu
     let lessonJson;
     try {
       lessonJson = JSON.parse(raw);
-    } catch (e) {
-      console.error('Nie udało się sparsować JSON z modelu:', e, raw);
+    } catch (err) {
+      console.error("❌ JSON parse error:", err, "\nAI returned:", raw);
       return res.status(500).json({
         status: 'error',
         message: 'Model zwrócił niepoprawny JSON.'
       });
     }
 
-    // zwracamy ładną strukturę do frontu
+    // 🔥 zwracamy poprawną lekcję do frontendu
     res.json({
       status: 'ok',
       lekcja: lessonJson
     });
+
   } catch (error) {
-    console.error('Błąd przy generowaniu lekcji:', error);
+    console.error("❌ Błąd przy generowaniu lekcji:", error);
     res.status(500).json({
       status: 'error',
       message: 'Błąd serwera przy generowaniu lekcji.'
