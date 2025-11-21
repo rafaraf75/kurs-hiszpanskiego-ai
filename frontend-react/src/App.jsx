@@ -74,18 +74,45 @@ function App() {
     }
   }
 
+  // 🔹 reset – czyści localStorage i stan w pamięci
+  function resetLesson() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn("Nie udało się usunąć stanu z localStorage", e);
+    }
+    setLesson(null);
+    setProgress(null);
+    setError("");
+  }
+
   // 🔹 callback z LessonView – aktualizuje stan postępu
   function handleProgressChange(newProgress) {
     setProgress(newProgress);
   }
 
+  const hasLesson = !!lesson;
+
   return (
     <div style={{ padding: "20px", fontFamily: "system-ui, sans-serif" }}>
       <h1>Kurs hiszpańskiego AI – React</h1>
 
-      <button onClick={loadLesson} disabled={loading}>
-        {loading ? "Ładowanie..." : "Pobierz nową lekcję"}
-      </button>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+        <button onClick={loadLesson} disabled={loading}>
+          {loading ? "Ładowanie..." : hasLesson ? "Pobierz nową lekcję" : "Pobierz lekcję"}
+        </button>
+
+        <button
+          onClick={resetLesson}
+          disabled={!hasLesson}
+          style={{
+            opacity: hasLesson ? 1 : 0.5,
+            cursor: hasLesson ? "pointer" : "not-allowed",
+          }}
+        >
+          Rozpocznij od nowa
+        </button>
+      </div>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -97,7 +124,7 @@ function App() {
         />
       ) : (
         <p style={{ marginTop: "10px" }}>
-          Kliknij przycisk, aby pobrać pierwszą lekcję.
+          Kliknij „Pobierz lekcję”, aby zacząć.
         </p>
       )}
     </div>
