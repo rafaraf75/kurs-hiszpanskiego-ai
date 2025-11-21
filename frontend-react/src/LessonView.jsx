@@ -2,7 +2,7 @@ import Flashcards from "./Flashcards";
 import SentencesStep from "./SentencesStep";
 import ExerciseStep from "./ExerciseStep";
 
-export default function LessonView({ lesson, progress, onProgressChange }) {
+export default function LessonView({ lesson, progress, onProgressChange, onNewLesson }) {
   // Jeśli nie ma progress – ustawiamy domyślne wartości
   const phase = progress?.phase || "flashcards";
   const wordIndex = progress?.wordIndex ?? 0;
@@ -122,12 +122,28 @@ export default function LessonView({ lesson, progress, onProgressChange }) {
           )}
           {sentences.length > 0 && <p>Przerobiłeś wszystkie zdania.</p>}
           {exercise && <p>Ukończyłeś ćwiczenie.</p>}
-          <p style={{ marginTop: "12px" }}>
-            W przyszłości dodamy tutaj przycisk „Następna lekcja” i zapis do
-            bazy/Supabase.
-          </p>
+
+          <div style={{ marginTop: "16px" }}>
+            {onNewLesson && (
+              <button
+                onClick={onNewLesson}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: "#3b82f6",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              >
+                Następna lekcja
+              </button>
+            )}
+          </div>
         </div>
       )}
+
     </div>
   );
 }
