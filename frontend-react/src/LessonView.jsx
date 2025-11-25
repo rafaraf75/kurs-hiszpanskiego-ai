@@ -84,7 +84,14 @@ export default function LessonView({ lesson, progress, onProgressChange, onNewLe
   }
 
   return (
-    <div style={{ marginTop: "20px", maxWidth: "720px" }}>
+    <div
+      style={{
+        marginTop: "20px",
+        maxWidth: "720px",
+        marginLeft: "auto",
+        marginRight: "auto",
+      }}
+    >
       <h2 style={{ marginBottom: "4px" }}>{lesson.temat}</h2>
       <p style={{ marginTop: 0, marginBottom: "16px" }}>
         Poziom: {lesson.poziom}
