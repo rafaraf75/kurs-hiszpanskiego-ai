@@ -121,19 +121,34 @@ Zwróć TYLKO poprawny obiekt JSON (bez markdown, bez komentarzy, bez tekstu prz
 Struktura JSON musi być taka:
 
 {
-  "temat": "...",
+  "temat": "krótki tytuł po polsku",
   "poziom": "A1",
   "slowka": [
-    { "es": "...", "pl": "..." }
+    { "es": "hola", "pl": "cześć" },
+    { "es": "gracias", "pl": "dziękuję" }
   ],
   "zdania": [
-    { "es": "...", "pl": "..." }
+    { "es": "Hola, ¿cómo estás?", "pl": "Cześć, jak się masz?" }
   ],
   "cwiczenie": {
     "pytania": ["..."],
     "odpowiedzi": ["..."]
   }
 }
+
+BARDZO WAŻNE ZASADY DOTYCZĄCE SŁÓWEK:
+
+- Pole "es" ZAWSZE zawiera słowo po HISZPAŃSKU.
+- Pole "pl" ZAWSZE zawiera tłumaczenie po POLSKU.
+- W normalnych przypadkach tekst w "es" i "pl" jest INNY.
+- TYLKO w oczywistych przypadkach zapożyczeń wolno użyć tego samego słowa
+  w obu polach, np.: "hotel", "internet", "taxi", "park".
+
+Przykład poprawnej pary:
+{ "es": "farmacia", "pl": "apteka" }  ✅
+
+Przykład NIEPOPRAWNEJ pary (tak NIE rób):
+{ "es": "apteka", "pl": "apteka" }  ❌
 
 Wymagania:
 - Używaj prostych słów i krótkich zdań odpowiednich dla poziomu A1.
