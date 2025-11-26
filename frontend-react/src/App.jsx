@@ -97,9 +97,9 @@ function App() {
       const newLesson = data.lekcja;
       setLesson(newLesson);
 
-      // 🔹 nowa lekcja = reset postępu
+      // 🔹 nowa lekcja = start od ekranu wprowadzającego
       setProgress({
-        phase: "flashcards",
+        phase: "intro",
         wordIndex: 0,
         knownCount: 0,
         sentenceIndex: 0,

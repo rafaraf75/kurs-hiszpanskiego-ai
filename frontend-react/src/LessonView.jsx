@@ -8,8 +8,8 @@ export default function LessonView({
   onProgressChange,
   onNewLesson,
 }) {
-  // Jeśli nie ma progress – ustawiamy domyślne wartości
-  const phase = progress?.phase || "flashcards";
+  // Jeśli nie ma progress – zaczynamy od intro
+  const phase = progress?.phase || "intro";
   const wordIndex = progress?.wordIndex ?? 0;
   const knownCount = progress?.knownCount ?? 0;
   const sentenceIndex = progress?.sentenceIndex ?? 0;
@@ -18,9 +18,12 @@ export default function LessonView({
   const sentences = lesson.zdania || [];
   const exercise = lesson.cwiczenie || null;
 
-  // 🔹 dynamiczna lista kroków (jeśli brak zdań/ćwiczeń, kroki się skrócą)
+  // 🔹 dynamiczna lista kroków – dodajemy intro jako pierwszy etap
   const steps = [];
+  steps.push({ key: "intro", label: "Start" });
+
   steps.push({ key: "flashcards", label: "Słówka" });
+
   if (sentences.length > 0) {
     steps.push({ key: "sentences", label: "Zdania" });
   }
@@ -102,6 +105,16 @@ export default function LessonView({
       wordIndex,
       knownCount,
       sentenceIndex,
+    });
+  }
+
+  // 🔹 start lekcji z ekranu intro
+  function handleStartLesson() {
+    updateProgress({
+      phase: "flashcards",
+      wordIndex: 0,
+      knownCount: 0,
+      sentenceIndex: 0,
     });
   }
 
@@ -211,6 +224,57 @@ export default function LessonView({
       <p style={{ marginTop: 0, marginBottom: "16px" }}>
         Poziom: {lesson.poziom}
       </p>
+
+      {/* 🔹 Ekran wprowadzający lekcję */}
+      {phase === "intro" && (
+        <div
+          style={{
+            padding: "20px",
+            borderRadius: "16px",
+            background: "#0f172a",
+            color: "#f9fafb",
+            boxShadow: "0 18px 40px rgba(15,23,42,0.65)",
+            marginBottom: "16px",
+          }}
+        >
+          <p style={{ marginTop: 0, marginBottom: "8px", opacity: 0.9 }}>
+            Ta lekcja zawiera:
+          </p>
+          <ul
+            style={{
+              marginTop: 0,
+              marginBottom: "12px",
+              paddingLeft: "20px",
+            }}
+          >
+            {words.length > 0 && <li>{words.length} słówek</li>}
+            {sentences.length > 0 && <li>{sentences.length} zdań</li>}
+            {exercise && (
+              <li>
+                {exercise.pytania?.length || 0} zdań w ćwiczeniu tłumaczeniowym
+              </li>
+            )}
+          </ul>
+          <p style={{ marginTop: 0, marginBottom: "12px", opacity: 0.9 }}>
+            Zacznij od fiszek ze słówkami, potem przejdziesz do zdań i krótkiego ćwiczenia.
+          </p>
+          <button
+            onClick={handleStartLesson}
+            style={{
+              padding: "10px 18px",
+              borderRadius: "999px",
+              border: "none",
+              cursor: "pointer",
+              background: "linear-gradient(to right, #3b82f6, #22c55e)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.95rem",
+            }}
+          >
+            Rozpocznij lekcję
+          </button>
+        </div>
+      )}
 
       {phase === "flashcards" && (
         <Flashcards
