@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 export default function ExerciseStep({ exercise, onFinish }) {
-  // Hook ZAWSZE na górze komponentu
-  const [showAnswers, setShowAnswers] = useState(false);
+  // hooki muszą być na górze komponentu
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
 
   if (!exercise) {
     return <p>Brak ćwiczenia w tej lekcji.</p>;
@@ -11,12 +12,29 @@ export default function ExerciseStep({ exercise, onFinish }) {
   const questions = exercise.pytania || [];
   const answers = exercise.odpowiedzi || [];
 
-  const handleToggleAnswers = () => {
-    setShowAnswers((prev) => !prev);
+  // zabezpieczenie, gdyby tablice były różnej długości
+  const total = Math.min(questions.length, answers.length);
+
+  if (total === 0) {
+    return <p>Brak pytań w ćwiczeniu.</p>;
+  }
+
+  const isLast = currentIndex === total - 1;
+
+  const question = questions[currentIndex];
+  const answer = answers[currentIndex];
+
+  const handleToggleAnswer = () => {
+    setShowAnswer((prev) => !prev);
   };
 
-  const handleFinish = () => {
-    if (onFinish) onFinish();
+  const handleNext = () => {
+    if (isLast) {
+      if (onFinish) onFinish();
+      return;
+    }
+    setCurrentIndex((prev) => prev + 1);
+    setShowAnswer(false);
   };
 
   return (
@@ -47,15 +65,27 @@ export default function ExerciseStep({ exercise, onFinish }) {
             opacity: 0.9,
           }}
         >
-          Przetłumacz zdania z polskiego na hiszpański (w myślach lub na kartce), a
-          potem porównaj z odpowiedziami.
+          Przetłumacz zdanie z polskiego na hiszpański (w myślach lub na kartce), a
+          potem porównaj z odpowiedzią.
         </p>
       </div>
 
-      {/* Lista pytań */}
+      {/* Informacja o numerze pytania */}
+      <p
+        style={{
+          marginTop: 0,
+          marginBottom: "8px",
+          fontSize: "0.9rem",
+          opacity: 0.9,
+        }}
+      >
+        Pytanie {currentIndex + 1} z {total}
+      </p>
+
+      {/* Karta z pytaniem */}
       <div
         style={{
-          padding: "20px 18px",
+          padding: "24px 20px",
           borderRadius: "16px",
           background: "radial-gradient(circle at top, #111827, #020617)",
           marginBottom: "16px",
@@ -63,43 +93,26 @@ export default function ExerciseStep({ exercise, onFinish }) {
       >
         <p
           style={{
-            marginTop: 0,
-            marginBottom: "10px",
-            fontSize: "0.95rem",
-            opacity: 0.9,
-          }}
-        >
-          Z polskiego na hiszpański:
-        </p>
-
-        <ol
-          style={{
-            paddingLeft: "20px",
             margin: 0,
-            display: "grid",
-            gap: "6px",
-            fontSize: "0.98rem",
+            fontSize: "1.05rem",
           }}
         >
-          {questions.map((q, i) => (
-            <li key={i}>{q}</li>
-          ))}
-        </ol>
+          {question}
+        </p>
       </div>
 
-      {/* Przyciski: pokaż odpowiedzi + zakończ */}
+      {/* Przyciski: pokaż odpowiedź i następne */}
       <div
         style={{
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: "column",
           gap: "10px",
-          marginBottom: showAnswers ? "14px" : "0",
+          marginBottom: showAnswer ? "14px" : "4px",
         }}
       >
         <button
-          onClick={handleToggleAnswers}
+          onClick={handleToggleAnswer}
           style={{
-            flex: "1 1 160px",
             padding: "8px 12px",
             borderRadius: "999px",
             border: "1px solid #4b5563",
@@ -110,33 +123,31 @@ export default function ExerciseStep({ exercise, onFinish }) {
             fontWeight: 500,
           }}
         >
-          {showAnswers ? "Ukryj odpowiedzi" : "Pokaż odpowiedzi"}
+          {showAnswer ? "Ukryj odpowiedź" : "Pokaż odpowiedź"}
         </button>
 
         <button
-          onClick={handleFinish}
+          onClick={handleNext}
           style={{
-            flex: "1 1 160px",
-            padding: "8px 12px",
+            padding: "10px 12px",
             borderRadius: "999px",
             border: "none",
             cursor: "pointer",
-            background:
-              "linear-gradient(to right, #3b82f6, #22c55e)",
+            background: "linear-gradient(to right, #3b82f6, #22c55e)",
             color: "white",
             fontWeight: 600,
             fontSize: "0.95rem",
           }}
         >
-          Zakończ ćwiczenie
+          {isLast ? "Zakończ ćwiczenie" : "Następne pytanie"}
         </button>
       </div>
 
-      {/* Odpowiedzi po hiszpańsku */}
-      {showAnswers && (
+      {/* Odpowiedź po hiszpańsku */}
+      {showAnswer && (
         <div
           style={{
-            marginTop: "10px",
+            marginTop: "8px",
             padding: "16px 18px",
             borderRadius: "14px",
             background: "#020617",
@@ -150,22 +161,18 @@ export default function ExerciseStep({ exercise, onFinish }) {
               opacity: 0.9,
             }}
           >
-            Proponowane odpowiedzi po hiszpańsku:
+            Proponowana odpowiedź po hiszpańsku:
           </p>
 
-          <ol
+          <p
             style={{
-              paddingLeft: "20px",
               margin: 0,
-              display: "grid",
-              gap: "6px",
-              fontSize: "0.98rem",
+              fontSize: "1.02rem",
+              fontWeight: 500,
             }}
           >
-            {answers.map((a, i) => (
-              <li key={i}>{a}</li>
-            ))}
-          </ol>
+            {answer}
+          </p>
         </div>
       )}
     </div>
