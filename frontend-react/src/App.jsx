@@ -1,7 +1,63 @@
 import { useState, useEffect } from "react";
 import LessonView from "./LessonView";
 
-const STORAGE_KEY = "kurs_hiszpanski_a1_react_progress_v1";
+const STORAGE_KEY = "kurs_hiszpanski_a1_react_progress_v2";
+const SCHEMA_VERSION = 1;
+
+// 🔹 helper: wczytywanie stanu z localStorage
+function loadSavedState() {
+  try {
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (!json) return null;
+
+    const data = JSON.parse(json);
+
+    // prosta walidacja struktury
+    if (!data || typeof data !== "object") return null;
+    if (data.schemaVersion !== SCHEMA_VERSION) return null;
+    if (!data.lesson) return null;
+
+    return {
+      lesson: data.lesson,
+      progress: data.progress || null,
+    };
+  } catch (e) {
+    console.warn("Nie udało się wczytać stanu z localStorage, czyszczę go.", e);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignorujemy
+    }
+    return null;
+  }
+}
+
+// 🔹 helper: zapis stanu do localStorage
+function saveState(lesson, progress) {
+  if (!lesson) return;
+
+  const data = {
+    schemaVersion: SCHEMA_VERSION,
+    lesson,
+    progress,
+    timestamp: Date.now(),
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("Nie udało się zapisać stanu do localStorage", e);
+  }
+}
+
+// 🔹 helper: wyczyszczenie stanu
+function clearState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn("Nie udało się usunąć stanu z localStorage", e);
+  }
+}
 
 function App() {
   const [lesson, setLesson] = useState(null);
@@ -9,37 +65,19 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔹 wczytanie stanu z localStorage przy starcie
+  // 🔹 wczytanie stanu przy starcie
   useEffect(() => {
-    try {
-      const json = localStorage.getItem(STORAGE_KEY);
-      if (!json) return;
-      const saved = JSON.parse(json);
-
-      if (saved && saved.lesson) {
-        setLesson(saved.lesson);
-        setProgress(saved.progress || null);
-      }
-    } catch (e) {
-      console.warn("Nie udało się wczytać stanu z localStorage", e);
+    const saved = loadSavedState();
+    if (saved && saved.lesson) {
+      setLesson(saved.lesson);
+      setProgress(saved.progress || null);
     }
   }, []);
 
-  // 🔹 zapis stanu do localStorage, gdy zmienia się lekcja lub progress
+  // 🔹 zapis do localStorage przy każdej zmianie lekcji / progresu
   useEffect(() => {
     if (!lesson) return;
-
-    const data = {
-      lesson,
-      progress,
-      timestamp: Date.now(),
-    };
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {
-      console.warn("Nie udało się zapisać stanu do localStorage", e);
-    }
+    saveState(lesson, progress);
   }, [lesson, progress]);
 
   async function loadLesson() {
@@ -76,11 +114,7 @@ function App() {
 
   // 🔹 reset – czyści localStorage i stan w pamięci
   function resetLesson() {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      console.warn("Nie udało się usunąć stanu z localStorage", e);
-    }
+    clearState();
     setLesson(null);
     setProgress(null);
     setError("");
