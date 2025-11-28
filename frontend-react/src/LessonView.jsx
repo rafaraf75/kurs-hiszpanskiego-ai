@@ -7,9 +7,10 @@ export default function LessonView({
   progress,
   onProgressChange,
   onNewLesson,
+  onUnknownWord,
 }) {
-  // Jeśli nie ma progress – zaczynamy od intro
-  const phase = progress?.phase || "intro";
+  // Jeśli nie ma progress – ustawiamy domyślne wartości
+  const phase = progress?.phase || "intro"; // startujemy od ekranu startowego
   const wordIndex = progress?.wordIndex ?? 0;
   const knownCount = progress?.knownCount ?? 0;
   const sentenceIndex = progress?.sentenceIndex ?? 0;
@@ -18,25 +19,19 @@ export default function LessonView({
   const sentences = lesson.zdania || [];
   const exercise = lesson.cwiczenie || null;
 
-  // 🔹 dynamiczna lista kroków – dodajemy intro jako pierwszy etap
-  const steps = [];
-  steps.push({ key: "intro", label: "Start" });
+  const totalSteps = 5;
+  const currentStepIndex =
+    phase === "intro"
+      ? 0
+      : phase === "flashcards"
+      ? 1
+      : phase === "sentences"
+      ? 2
+      : phase === "exercise"
+      ? 3
+      : 4;
 
-  steps.push({ key: "flashcards", label: "Słówka" });
-
-  if (sentences.length > 0) {
-    steps.push({ key: "sentences", label: "Zdania" });
-  }
-  if (exercise) {
-    steps.push({ key: "exercise", label: "Ćwiczenie" });
-  }
-  steps.push({ key: "summary", label: "Podsumowanie" });
-
-  const currentStepIndex = Math.max(
-    0,
-    steps.findIndex((s) => s.key === phase)
-  );
-  const lastStepIndex = steps.length - 1;
+  const stepLabels = ["Start", "Słówka", "Zdania", "Ćwiczenie", "Podsumowanie"];
 
   function updateProgress(newData) {
     if (!onProgressChange) return;
@@ -49,8 +44,29 @@ export default function LessonView({
     });
   }
 
+  // 🔹 przejście ze „Start” do fiszek
+  function handleStartLesson() {
+    updateProgress({
+      phase: "flashcards",
+      wordIndex: 0,
+      knownCount: 0,
+      sentenceIndex: 0,
+    });
+  }
+
   // 🔹 obsługa flashcards
   function handleFlashcardAnswer(known) {
+    const currentWord = words[wordIndex];
+
+    // jeśli NIE znałeś – zgłaszamy do powtórek
+    if (!known && currentWord && onUnknownWord) {
+      onUnknownWord({
+        es: currentWord.es,
+        pl: currentWord.pl,
+        temat: lesson.temat,
+      });
+    }
+
     let newKnownCount = known ? knownCount + 1 : knownCount;
     let newWordIndex = wordIndex + 1;
     let newPhase = phase;
@@ -108,155 +124,117 @@ export default function LessonView({
     });
   }
 
-  // 🔹 start lekcji z ekranu intro
-  function handleStartLesson() {
-    updateProgress({
-      phase: "flashcards",
-      wordIndex: 0,
-      knownCount: 0,
-      sentenceIndex: 0,
-    });
-  }
+  // 🔹 mały helper – opis liczbowy kroku
+  const stepNumberLabel = `Krok ${currentStepIndex + 1} z ${totalSteps}`;
 
   return (
     <div
       style={{
         marginTop: "20px",
-        maxWidth: "720px",
+        maxWidth: "900px",
         marginLeft: "auto",
         marginRight: "auto",
       }}
     >
-      {/* 🔹 Pasek postępu lekcji */}
+      {/* Pasek etapów na górze */}
       <div
         style={{
-          marginBottom: "16px",
-          padding: "10px 12px",
+          background: "#020617",
+          padding: "16px 24px",
           borderRadius: "999px",
-          background: "#0f172a",
-          boxShadow: "0 12px 25px rgba(15,23,42,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
+          marginBottom: "24px",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            position: "relative",
-          }}
-        >
-          {/* Linia w tle */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "16px",
-              right: "16px",
-              height: "2px",
-              background: "#1f2937",
-              transform: "translateY(-50%)",
-              zIndex: 0,
-            }}
-          />
-          {/* Kroki */}
-          {steps.map((step, idx) => {
-            const isDone = idx < currentStepIndex;
-            const isCurrent = idx === currentStepIndex;
+        {stepLabels.map((label, idx) => {
+          const isActive = idx === currentStepIndex;
+          const isDone = idx < currentStepIndex;
 
-            let circleColor = "#4b5563";
-            if (isDone) circleColor = "#22c55e";
-            if (isCurrent) circleColor = "#3b82f6";
-
-            return (
+          return (
+            <div
+              key={label}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                flex: 1,
+                fontSize: "0.8rem",
+              }}
+            >
               <div
-                key={step.key}
                 style={{
-                  position: "relative",
-                  zIndex: 1,
+                  width: 26,
+                  height: 26,
+                  borderRadius: "999px",
+                  border: "2px solid #4b5563",
+                  background: isActive
+                    ? "#3b82f6"
+                    : isDone
+                    ? "#22c55e"
+                    : "#020617",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  flex: 1,
+                  justifyContent: "center",
+                  color: "white",
+                  marginBottom: 4,
                 }}
               >
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: "999px",
-                    background: circleColor,
-                    border: "2px solid #020617",
-                    boxShadow: isCurrent
-                      ? "0 0 0 3px rgba(59,130,246,0.4)"
-                      : "none",
-                    marginBottom: 4,
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: "0.75rem",
-                    color: isDone || isCurrent ? "#e5e7eb" : "#9ca3af",
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {step.label}
-                </span>
+                {isDone ? "✓" : idx + 1}
               </div>
-            );
-          })}
-        </div>
-        {/* Mały opis na dole paska */}
+              <span
+                style={{
+                  color: isActive ? "#e5e7eb" : "#9ca3af",
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
+
         <div
           style={{
-            marginTop: 6,
-            textAlign: "center",
+            width: 120,
+            textAlign: "right",
             fontSize: "0.8rem",
             color: "#9ca3af",
           }}
         >
-          Krok {currentStepIndex + 1} z {lastStepIndex + 1}
+          {stepNumberLabel}
         </div>
       </div>
 
-      {/* Tytuł lekcji */}
+      {/* Nagłówek lekcji */}
       <h2 style={{ marginBottom: "4px" }}>{lesson.temat}</h2>
-      <p style={{ marginTop: 0, marginBottom: "16px" }}>
-        Poziom: {lesson.poziom}
-      </p>
+      <p style={{ marginTop: 0, marginBottom: "16px" }}>Poziom: {lesson.poziom}</p>
 
-      {/* 🔹 Ekran wprowadzający lekcję */}
+      {/* Ekran „Start” */}
       {phase === "intro" && (
         <div
           style={{
-            padding: "20px",
-            borderRadius: "16px",
-            background: "#0f172a",
-            color: "#f9fafb",
-            boxShadow: "0 18px 40px rgba(15,23,42,0.65)",
-            marginBottom: "16px",
+            background: "#020617",
+            padding: "20px 24px 24px",
+            borderRadius: "18px",
+            boxShadow: "0 18px 40px rgba(0,0,0,0.65)",
           }}
         >
-          <p style={{ marginTop: 0, marginBottom: "8px", opacity: 0.9 }}>
+          <h3 style={{ marginTop: 0, marginBottom: 12 }}>
             Ta lekcja zawiera:
-          </p>
-          <ul
-            style={{
-              marginTop: 0,
-              marginBottom: "12px",
-              paddingLeft: "20px",
-            }}
-          >
+          </h3>
+          <ul style={{ marginTop: 0, marginBottom: 12, paddingLeft: "20px" }}>
             {words.length > 0 && <li>{words.length} słówek</li>}
             {sentences.length > 0 && <li>{sentences.length} zdań</li>}
-            {exercise && (
-              <li>
-                {exercise.pytania?.length || 0} zdań w ćwiczeniu tłumaczeniowym
-              </li>
+            {exercise && exercise.pytania && (
+              <li>{exercise.pytania.length} zdań w ćwiczeniu tłumaczeniowym</li>
             )}
           </ul>
-          <p style={{ marginTop: 0, marginBottom: "12px", opacity: 0.9 }}>
-            Zacznij od fiszek ze słówkami, potem przejdziesz do zdań i krótkiego ćwiczenia.
+          <p style={{ marginBottom: 16, color: "#e5e7eb" }}>
+            Zacznij od fiszek ze słówkami, potem przejdziesz do zdań i krótkiego
+            ćwiczenia.
           </p>
           <button
             onClick={handleStartLesson}
@@ -265,7 +243,8 @@ export default function LessonView({
               borderRadius: "999px",
               border: "none",
               cursor: "pointer",
-              background: "linear-gradient(to right, #3b82f6, #22c55e)",
+              background:
+                "linear-gradient(135deg, #3b82f6 0%, #22c55e 100%)",
               color: "white",
               fontWeight: 600,
               fontSize: "0.95rem",
@@ -276,6 +255,7 @@ export default function LessonView({
         </div>
       )}
 
+      {/* Etap 2 – słówka */}
       {phase === "flashcards" && (
         <Flashcards
           words={words}
@@ -285,6 +265,7 @@ export default function LessonView({
         />
       )}
 
+      {/* Etap 3 – zdania */}
       {phase === "sentences" && sentences.length > 0 && (
         <SentencesStep
           sentence={sentences[sentenceIndex]}
@@ -294,10 +275,12 @@ export default function LessonView({
         />
       )}
 
+      {/* Etap 4 – ćwiczenie */}
       {phase === "exercise" && exercise && (
         <ExerciseStep exercise={exercise} onFinish={handleExerciseFinished} />
       )}
 
+      {/* Etap 5 – podsumowanie */}
       {phase === "summary" && (
         <div style={{ marginTop: "24px" }}>
           <h3>Lekcja zakończona 🎉</h3>
