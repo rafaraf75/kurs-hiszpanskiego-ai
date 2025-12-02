@@ -1,39 +1,39 @@
+// frontend-react/src/App.jsx
 import { useState, useEffect } from "react";
 import LessonView from "./LessonView";
 import ReviewView from "./ReviewView";
 
-const STORAGE_KEY = "kurs_hiszpanski_a1_react_progress_v1";
+const STORAGE_KEY = "kurs_hiszpanski_a1_react_progress_v2";
 
 function App() {
   const [lesson, setLesson] = useState(null);
   const [progress, setProgress] = useState(null);
-  const [reviewWords, setReviewWords] = useState([]);
-  const [mode, setMode] = useState("lesson"); // "lesson" | "review"
+  const [reviewWords, setReviewWords] = useState([]); // słówka do powtórki
+  const [view, setView] = useState("lesson"); // "lesson" | "review"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔹 wczytanie stanu z localStorage przy starcie
+  // wczytanie stanu z localStorage przy starcie
   useEffect(() => {
     try {
       const json = localStorage.getItem(STORAGE_KEY);
       if (!json) return;
+
       const saved = JSON.parse(json);
 
       if (saved && saved.lesson) {
         setLesson(saved.lesson);
         setProgress(saved.progress || null);
-      }
-      if (saved && Array.isArray(saved.reviewWords)) {
-        setReviewWords(saved.reviewWords);
+        setReviewWords(saved.reviewWords || []);
       }
     } catch (e) {
       console.warn("Nie udało się wczytać stanu z localStorage", e);
     }
   }, []);
 
-  // 🔹 zapis stanu do localStorage, gdy zmienia się lekcja / progress / reviewWords
+  // zapis stanu do localStorage, gdy zmienia się lekcja / progres / powtórki
   useEffect(() => {
-    if (!lesson && reviewWords.length === 0) return;
+    if (!lesson) return;
 
     const data = {
       lesson,
@@ -52,7 +52,6 @@ function App() {
   async function loadLesson() {
     setLoading(true);
     setError("");
-    setMode("lesson");
 
     try {
       const res = await fetch("http://localhost:3000/lekcja");
@@ -67,13 +66,17 @@ function App() {
       const newLesson = data.lekcja;
       setLesson(newLesson);
 
-      // 🔹 nowa lekcja = reset postępu (ale NIE resetujemy powtórek!)
+      // nowa lekcja = reset postępu
       setProgress({
-        phase: "intro",
+        phase: "flashcards",
         wordIndex: 0,
         knownCount: 0,
         sentenceIndex: 0,
       });
+
+      // i czyścimy listę powtórek
+      setReviewWords([]);
+      setView("lesson");
     } catch (err) {
       console.error("Błąd pobierania lekcji:", err);
       setError("Nie udało się pobrać lekcji.");
@@ -82,7 +85,7 @@ function App() {
     }
   }
 
-  // 🔹 reset – czyści localStorage i stan w pamięci (łącznie z powtórkami)
+  // reset – czyści localStorage i stan w pamięci
   function resetLesson() {
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -92,59 +95,25 @@ function App() {
     setLesson(null);
     setProgress(null);
     setReviewWords([]);
-    setMode("lesson");
     setError("");
+    setView("lesson");
   }
 
-  // 🔹 callback z LessonView – aktualizuje stan postępu
+  // callback z LessonView – aktualizuje stan postępu
   function handleProgressChange(newProgress) {
     setProgress(newProgress);
   }
 
-  // 🔹 callback z LessonView – dodawanie słówek do powtórki
-  function handleUnknownWord(word) {
-    setReviewWords((prev) => {
-      if (!word || !word.es) return prev;
-      const exists = prev.some((w) => w.es === word.es);
-      if (exists) return prev;
-      return [...prev, word];
-    });
-  }
-
-  // 🔹 przejście do trybu powtórki
-  function openReview() {
-    if (reviewWords.length === 0) return;
-    setMode("review");
-  }
-
-  function exitReview() {
-    setMode("lesson");
-  }
-
-  function clearReview() {
-    setReviewWords([]);
-  }
-
   const hasLesson = !!lesson;
+  const reviewCount = reviewWords.length;
 
   return (
-    <div style={{ padding: "20px", fontFamily: "system-ui, sans-serif", color: "#f9fafb", background: "#020617", minHeight: "100vh" }}>
-      <h1 style={{ marginBottom: "16px" }}>Kurs hiszpańskiego AI – React</h1>
+    <div style={{ padding: "20px", fontFamily: "system-ui, sans-serif" }}>
+      <h1>Kurs hiszpańskiego AI – React</h1>
 
       {/* Górne przyciski */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-        <button
-          onClick={loadLesson}
-          disabled={loading}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            cursor: loading ? "wait" : "pointer",
-            background: "#111827",
-            color: "#f9fafb",
-          }}
-        >
+        <button onClick={loadLesson} disabled={loading}>
           {loading
             ? "Ładowanie..."
             : hasLesson
@@ -154,61 +123,55 @@ function App() {
 
         <button
           onClick={resetLesson}
-          disabled={!hasLesson && reviewWords.length === 0}
+          disabled={!hasLesson}
           style={{
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            cursor:
-              !hasLesson && reviewWords.length === 0 ? "not-allowed" : "pointer",
-            background: "#111827",
-            color:
-              !hasLesson && reviewWords.length === 0 ? "#6b7280" : "#f9fafb",
+            opacity: hasLesson ? 1 : 0.5,
+            cursor: hasLesson ? "pointer" : "not-allowed",
           }}
         >
           Rozpocznij od nowa
         </button>
 
         <button
-          onClick={openReview}
-          disabled={reviewWords.length === 0}
+          onClick={() => {
+            if (reviewCount > 0) {
+              setView("review");
+            }
+          }}
+          disabled={reviewCount === 0}
           style={{
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            cursor: reviewWords.length === 0 ? "not-allowed" : "pointer",
-            background:
-              reviewWords.length === 0 ? "#111827" : "#16a34a",
-            color: reviewWords.length === 0 ? "#6b7280" : "white",
-            marginLeft: "auto",
+            opacity: reviewCount === 0 ? 0.4 : 1,
+            cursor: reviewCount === 0 ? "not-allowed" : "pointer",
           }}
         >
-          Powtórz słówka ({reviewWords.length})
+          Powtórz słówka ({reviewCount})
         </button>
       </div>
 
-      {error && <p style={{ color: "tomato" }}>{error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Główna zawartość: tryb lekcji vs tryb powtórki */}
-      {mode === "lesson" ? (
-        hasLesson ? (
-          <LessonView
-            lesson={lesson}
-            progress={progress}
-            onProgressChange={handleProgressChange}
-            onNewLesson={loadLesson}
-            onUnknownWord={handleUnknownWord}
-          />
-        ) : (
-          <p style={{ marginTop: "10px" }}>
-            Kliknij „Pobierz lekcję”, aby zacząć.
-          </p>
-        )
-      ) : (
+      {!lesson && (
+        <p style={{ marginTop: "10px" }}>
+          Kliknij „Pobierz lekcję”, aby zacząć.
+        </p>
+      )}
+
+      {lesson && view === "lesson" && (
+        <LessonView
+          lesson={lesson}
+          progress={progress}
+          onProgressChange={handleProgressChange}
+          onNewLesson={loadLesson}
+          reviewWords={reviewWords}
+          onReviewWordsChange={setReviewWords}
+        />
+      )}
+
+      {lesson && view === "review" && (
         <ReviewView
           words={reviewWords}
-          onExit={exitReview}
-          onClear={clearReview}
+          onBack={() => setView("lesson")}
+          onClear={() => setReviewWords([])}
         />
       )}
     </div>

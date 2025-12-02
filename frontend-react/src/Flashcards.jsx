@@ -1,12 +1,5 @@
-function speakEs(text) {
-  try {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "es-ES";
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.warn("TTS nie działa w tej przeglądarce", e);
-  }
-}
+// frontend-react/src/Flashcards.jsx
+import { speakEs } from "./tts";
 
 export default function Flashcards({ words, index, knownCount, onAnswer }) {
   if (!words || words.length === 0) {
@@ -38,8 +31,8 @@ export default function Flashcards({ words, index, knownCount, onAnswer }) {
             opacity: 0.9,
           }}
         >
-          Słówko {currentIndexSafe + (isFinished ? 0 : 1)} z {words.length} • Znałem:{" "}
-          {knownCount}
+          Słówko {currentIndexSafe + (isFinished ? 0 : 1)} z {words.length} •
+          Znałem: {knownCount}
         </div>
         <div
           style={{
@@ -55,8 +48,7 @@ export default function Flashcards({ words, index, knownCount, onAnswer }) {
               height: "100%",
               width: `${progressPercent}%`,
               transition: "width 0.25s ease-out",
-              background:
-                "linear-gradient(to right, #22c55e, #22d3ee)",
+              background: "linear-gradient(to right, #22c55e, #22d3ee)",
             }}
           />
         </div>
@@ -137,8 +129,7 @@ export default function Flashcards({ words, index, knownCount, onAnswer }) {
                 borderRadius: "999px",
                 border: "none",
                 cursor: "pointer",
-                background:
-                  "linear-gradient(to right, #22c55e, #16a34a)",
+                background: "linear-gradient(to right, #22c55e, #16a34a)",
                 color: "white",
                 fontWeight: 700,
                 fontSize: "0.95rem",
@@ -154,8 +145,7 @@ export default function Flashcards({ words, index, knownCount, onAnswer }) {
                 borderRadius: "999px",
                 border: "none",
                 cursor: "pointer",
-                background:
-                  "linear-gradient(to right, #f97316, #ef4444)",
+                background: "linear-gradient(to right, #f97316, #ef4444)",
                 color: "white",
                 fontWeight: 700,
                 fontSize: "0.95rem",
